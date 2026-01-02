@@ -73,6 +73,11 @@ export const signup = async (req, res, next) => {
     
   } catch (err) {
     console.log(err);
+    // Handle duplicate key error (11000)
+    if (err && err.code === 11000) {
+      const field = Object.keys(err.keyValue || {})[0] || 'field';
+      return res.status(409).json({ message: `${field} already in use` });
+    }
     return res.status(500).send("Internal Server Error");
   }
 };

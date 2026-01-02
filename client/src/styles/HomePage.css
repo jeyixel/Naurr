@@ -1,0 +1,158 @@
+/* Home Page Styles */
+.home-container {
+  min-height: 100vh;
+  background: #1a1a2e;
+  animation: fadeIn 0.5s ease-in;
+}
+
+.navbar {
+  background: #2b2d42;
+  border-bottom: 1px solid #1e1f2e;
+  padding: 16px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.nav-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-logo {
+  font-size: 1.75rem;
+  margin: 0;
+  color: #ffffff;
+  animation: bounce 1s ease-in-out;
+}
+
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #5865f2;
+  transition: transform 0.2s ease;
+}
+
+.user-avatar:hover {
+  transform: scale(1.1);
+}
+
+.user-name {
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.logout-button {
+  background: #ed4245;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logout-button:hover {
+  background: #c03537;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(237, 66, 69, 0.4);
+}
+
+.home-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 200px);
+}
+
+.welcome-message {
+  text-align: center;
+  animation: slideUp 0.8s ease-out;
+}
+
+.welcome-message h2 {
+  color: #ffffff;
+  font-size: 3rem;
+  margin: 0 0 16px 0;
+  background: linear-gradient(135deg, #5865f2 0%, #eb459e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.welcome-message p {
+  color: #b9bbbe;
+  font-size: 1.25rem;
+  margin: 0 0 12px 0;
+}
+
+.coming-soon {
+  color: #5865f2;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 24px !important;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}

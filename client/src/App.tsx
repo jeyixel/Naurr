@@ -1,38 +1,68 @@
 import React from 'react'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './components/AuthProvider'
-import Signup from './components/Signup'
-import Login from './components/Login'
+import LoginPage from './pages/LoginPage'
+import SignupPage from './pages/SignupPage'
+import HomePage from './pages/HomePage'
+import CookieConsent from './components/CookieConsent'
+import './App.css'
 
-function Home() {
-  const { user, logout } = useAuth()
-  if (!user)
-    return (
-      <div style={{ display: 'flex', gap: 20 }}>
-        <Signup />
-        <Login />
-      </div>
-    )
+// Protected route wrapper
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth()
+  
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+  
+  return <>{children}</>
+}
 
-  return (
-    <div>
-      <h2>Welcome, {user.firstName || user.email}</h2>
-      {user.profilePicture && <img src={user.profilePicture} alt="avatar" width={80} />}
-      <div>
-        <button onClick={logout}>Logout</button>
-      </div>
-    </div>
-  )
+// Public route wrapper (redirect to home if already logged in)
+function PublicRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth()
+  
+  if (user) {
+    return <Navigate to="/home" replace />
+  }
+  
+  return <>{children}</>
 }
 
 function App() {
   return (
-    <AuthProvider>
-      <div style={{ padding: 20 }}>
-        <h1>Auth Demo</h1>
-        <Home />
-      </div>
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <LoginPage />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/signup"
+            element={
+              <PublicRoute>
+                <SignupPage />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/home"
+            element={
+              <ProtectedRoute>
+                <HomePage />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+        <CookieConsent />
+      </AuthProvider>
+    </BrowserRouter>
   )
 }
 
