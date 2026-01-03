@@ -1,6 +1,7 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './components/AuthProvider'
+import Loading from './components/Loading'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import HomePage from './pages/HomePage'
@@ -11,10 +12,11 @@ import './App.css'
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
   
-  if (!user) {
-    return <Navigate to="/login" replace />
-  }
-  
+  // `undefined` = still restoring session
+  if (user === undefined) return <Loading />
+
+  if (user === null) return <Navigate to="/login" replace />
+
   return <>{children}</>
 }
 
@@ -22,10 +24,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
   
-  if (user) {
-    return <Navigate to="/home" replace />
-  }
-  
+  if (user === undefined) return <Loading />
+
+  if (user) return <Navigate to="/home" replace />
+
   return <>{children}</>
 }
 
