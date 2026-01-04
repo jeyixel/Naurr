@@ -1,5 +1,6 @@
 import React from 'react'
 import { useAuth } from '../components/AuthProvider'
+import naurlogo from '../assets/naurrlgo2.jpg'
 import '../styles/HomePage.css'
 
 export default function HomePage() {
@@ -9,7 +10,7 @@ export default function HomePage() {
     <div className="home-container">
       <nav className="navbar">
         <div className="nav-content">
-          <h1 className="nav-logo">💬 Naurr</h1>
+          <img src={naurlogo} alt="Naurr Logo" className="nav-logo" />
           <div className="nav-user">
             <div className="user-info">
               {user?.profilePicture && (

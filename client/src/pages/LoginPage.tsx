@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../components/AuthProvider'
+import logo from '../assets/naurrlgo2.jpg'
 import '../styles/AuthPages.css'
 
 export default function LoginPage() {
@@ -59,7 +60,7 @@ export default function LoginPage() {
     <div className="auth-container">
       <div className="auth-box">
         <div className="auth-header">
-          <h1 className="auth-logo">💬 Naurr</h1>
+          <img src={logo} alt="Naurr Logo" className="auth-logo" />
           <h2 className="auth-title">Welcome back!</h2>
           <p className="auth-subtitle">We're so excited to see you again!</p>
         </div>
