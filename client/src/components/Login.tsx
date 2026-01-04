@@ -9,11 +9,11 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null)
 
   const parseError = async (res: Response) => {
-    const contentType = res.headers.get('content-type')
-    if (contentType?.includes('application/json')) {
+    const contentType = res.headers.get('content-type') // check if response is json, why? Because express might send html error page. 
+    if (contentType?.includes('application/json')) { // if the response is json, try to parse it
       try {
-        const data = await res.json()
-        if (data?.message) return data.message as string
+        const data = await res.json() // parse json
+        if (data?.message) return data.message as string // return message if exists
       } catch (_) {
         // ignore
       }
@@ -23,14 +23,14 @@ export default function Login() {
   }
 
   const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault() // prevent default form submission behavior, what does that mean? It means the page won't reload
     setError(null)
 
     const res = await fetch('http://localhost:5000/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ email, username, password }),
+      body: JSON.stringify({ email, username, password }), 
     })
 
     if (!res.ok) {
