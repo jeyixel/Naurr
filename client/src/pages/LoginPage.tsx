@@ -7,9 +7,24 @@ export default function LoginPage() {
   const { setUser } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  const parseError = async (res: Response) => {
+    const contentType = res.headers.get('content-type')
+    if (contentType?.includes('application/json')) {
+      try {
+        const data = await res.json()
+        if (data?.message) return data.message as string
+      } catch (_) {
+        // fallback to text
+      }
+    }
+    const txt = await res.text()
+    return txt || 'Login failed'
+  }
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -21,12 +36,12 @@ export default function LoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, username, password }),
       })
 
       if (!res.ok) {
-        const txt = await res.text()
-        setError(txt || 'Login failed')
+        const parsed = await parseError(res)
+        setError(parsed)
         setLoading(false)
         return
       }
@@ -59,6 +74,19 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
+              disabled={loading}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="username">USERNAME</label>
+            <input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              autoComplete="username"
               disabled={loading}
             />
           </div>

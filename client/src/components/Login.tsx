@@ -4,8 +4,23 @@ import { useAuth } from './AuthProvider'
 export default function Login() {
   const { setUser } = useAuth()
   const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+
+  const parseError = async (res: Response) => {
+    const contentType = res.headers.get('content-type')
+    if (contentType?.includes('application/json')) {
+      try {
+        const data = await res.json()
+        if (data?.message) return data.message as string
+      } catch (_) {
+        // ignore
+      }
+    }
+    const txt = await res.text()
+    return txt || 'Login failed'
+  }
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -15,12 +30,12 @@ export default function Login() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, username, password }),
     })
 
     if (!res.ok) {
-      const txt = await res.text()
-      setError(txt || 'Login failed')
+      const parsed = await parseError(res)
+      setError(parsed)
       return
     }
 
@@ -34,6 +49,10 @@ export default function Login() {
       <div>
         <label>Email</label>
         <input value={email} onChange={(e) => setEmail(e.target.value)} />
+      </div>
+      <div>
+        <label>Username</label>
+        <input value={username} onChange={(e) => setUsername(e.target.value)} />
       </div>
       <div>
         <label>Password</label>

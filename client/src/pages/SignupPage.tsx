@@ -15,6 +15,20 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  const parseError = async (res: Response) => {
+    const contentType = res.headers.get('content-type')
+    if (contentType?.includes('application/json')) {
+      try {
+        const data = await res.json()
+        if (data?.message) return data.message as string
+      } catch (_) {
+        // fall back to text
+      }
+    }
+    const txt = await res.text()
+    return txt || 'Signup failed'
+  }
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -36,8 +50,8 @@ export default function SignupPage() {
       })
 
       if (!res.ok) {
-        const txt = await res.text()
-        setError(txt || 'Signup failed')
+        const parsed = await parseError(res)
+        setError(parsed)
         setLoading(false)
         return
       }
@@ -79,6 +93,7 @@ export default function SignupPage() {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              required
               disabled={loading}
             />
           </div>

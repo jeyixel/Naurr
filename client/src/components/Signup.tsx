@@ -11,6 +11,20 @@ export default function Signup() {
   const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  const parseError = async (res: Response) => {
+    const contentType = res.headers.get('content-type')
+    if (contentType?.includes('application/json')) {
+      try {
+        const data = await res.json()
+        if (data?.message) return data.message as string
+      } catch (_) {
+        // ignore
+      }
+    }
+    const txt = await res.text()
+    return txt || 'Signup failed'
+  }
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -30,8 +44,8 @@ export default function Signup() {
     })
 
     if (!res.ok) {
-      const txt = await res.text()
-      setError(txt || 'Signup failed')
+      const parsed = await parseError(res)
+      setError(parsed)
       return
     }
 
@@ -60,7 +74,7 @@ export default function Signup() {
       </div>
       <div>
         <label>Username</label>
-        <input value={username} onChange={(e) => setUsername(e.target.value)} />
+        <input value={username} onChange={(e) => setUsername(e.target.value)} required />
       </div>
       <div>
         <label>Profile image</label>

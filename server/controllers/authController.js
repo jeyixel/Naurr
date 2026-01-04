@@ -19,10 +19,20 @@ const createToken = (id) => {
 export const signup = async (req, res, next) => {
   try {
     const { email, password, firstName, lastName, username } = req.body;
-    
-    // 1. Check if user exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).send("User already exists.");
+    const normalizedUsername = (username || "").trim();
+
+    if (!normalizedUsername) {
+      return res.status(400).json({ message: "Username is required" });
+    }
+
+    // 1. Check if email or username already exist
+    const [existingEmail, existingUsername] = await Promise.all([
+      User.findOne({ email }),
+      User.findOne({ username: normalizedUsername }),
+    ]);
+
+    if (existingEmail) return res.status(400).json({ message: "Email already in use" });
+    if (existingUsername) return res.status(400).json({ message: "Username already in use" });
 
     // 2. Handle Image Upload (if a file was sent)
     let profilePictureUrl = "";
@@ -47,7 +57,7 @@ export const signup = async (req, res, next) => {
       password: hashedPassword, 
       firstName, 
       lastName,
-      username,       // Added from your new model
+      username: normalizedUsername, // enforce trimmed, unique usernames
       profilePicture: profilePictureUrl // The URL from Cloudinary
     });
 
@@ -67,7 +77,8 @@ export const signup = async (req, res, next) => {
         id: user._id, 
         email: user.email, 
         profilePicture: user.profilePicture,
-        firstName: user.firstName
+        firstName: user.firstName,
+        username: user.username,
       } 
     });
     
@@ -84,9 +95,18 @@ export const signup = async (req, res, next) => {
 
 export const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, username, password } = req.body;
+
+    if (!email || !username || !password) {
+      return res.status(400).json({ message: "Email, username, and password are required" });
+    }
+
     const user = await User.findOne({ email });
     if (!user) return res.status(404).send("User not found");
+
+    if (user.username !== username) {
+      return res.status(400).json({ message: "Username does not match this account" });
+    }
 
     const auth = await bcrypt.compare(password, user.password);
     if (!auth) return res.status(400).send("Invalid Password");
@@ -103,7 +123,7 @@ export const login = async (req, res, next) => {
     });
 
     return res.status(200).json({ 
-      user: { id: user._id, email: user.email, firstName: user.firstName } 
+      user: { id: user._id, email: user.email, firstName: user.firstName, username: user.username } 
     });
     
   } catch (err) {
