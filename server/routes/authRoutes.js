@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { signup, login, me, logout } from "../controllers/authController.js";
+import { signup, login, me, logout, regenerateFriendCode } from "../controllers/authController.js";
 import multer from "multer";
 
 const authRoutes = Router();
@@ -13,6 +13,8 @@ const upload = multer({ storage });
 authRoutes.post("/signup", upload.single("profile-image"), signup);
 authRoutes.post("/login", login);
 authRoutes.get("/me", me);
+// Regenerate friend code for the authenticated user
+authRoutes.put("/regenerate-code", regenerateFriendCode);
 authRoutes.post("/logout", logout);
 
 export default authRoutes;

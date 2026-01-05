@@ -4,7 +4,9 @@ import naurlogo from '../assets/naurrlgo2.jpg'
 import '../styles/HomePage.css'
 
 export default function HomePage() {
-  const { user, logout } = useAuth()
+  const { user, logout, setUser } = useAuth()
+  const [loading, setLoading] = useState(false)
+
   const [copied, setCopied] = useState(false)
   const copyResetRef = useRef<number | null>(null)
 
@@ -44,6 +46,38 @@ export default function HomePage() {
     } catch (err) {
       console.error('Failed to copy friend code', err)
       setCopied(false)
+    }
+  }
+
+  // New regenerate code handler (not yet wired up)
+  const handleRegenerateCode = async () => {
+    if (!confirm("Are you sure? Your old code will stop working.")) return;
+    
+    setLoading(true);
+    
+    try {
+      // 2. Call the backend
+      const res = await fetch('http://localhost:5000/api/auth/regenerate-code', {
+        method: 'PUT', // or POST, depending on your route
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Important for cookies!
+      });
+
+      const data = await res.json();
+
+      if (res.ok && user) {
+        // 3. Update the UI instantly
+        setUser({ ...user, friendCode: data.newFriendCode });
+        alert("Code updated!");
+      } else {
+        alert(data.message || "Error updating code");
+      }
+
+    } catch (err) {
+      console.error(err);
+      alert("Failed to connect to server");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -94,6 +128,14 @@ export default function HomePage() {
                 disabled={!isFriendCodeReady}
               >
                 {isFriendCodeReady ? (copied ? 'Copied' : 'Copy code') : 'Please wait'}
+              </button>
+              <button
+                type="button"
+                className="regenerate-code-button"
+                onClick={handleRegenerateCode}
+                disabled={loading || !isFriendCodeReady}
+              >
+                {loading ? 'Regenerating…' : 'Regenerate code'}
               </button>
             </div>
 

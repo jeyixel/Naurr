@@ -190,7 +190,15 @@ export const logout = (req, res) => {
 
 export const regenerateFriendCode = async (req, res) => {
   try {
-    const userId = req.user.id; // From your verifyToken middleware
+    // Support the case where no auth middleware is used by reading the
+    // JWT cookie (same approach as the `me` handler).
+    const token = req.cookies?.jwt;
+    if (!token) return res.status(401).send("Not authenticated");
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id;
+    if (!userId) return res.status(401).send("Not authenticated");
+
     const newCode = await generateUniqueFriendCode();
 
     // Update the user
@@ -200,9 +208,11 @@ export const regenerateFriendCode = async (req, res) => {
       { new: true }
     );
 
-    res.status(200).json({ 
-      message: "Friend code updated successfully", 
-      newFriendCode: updatedUser.friendCode 
+    if (!updatedUser) return res.status(404).send("User not found");
+
+    res.status(200).json({
+      message: "Friend code updated successfully",
+      newFriendCode: updatedUser.friendCode,
     });
 
   } catch (err) {
