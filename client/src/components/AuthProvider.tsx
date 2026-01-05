@@ -11,7 +11,14 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 
 // Define the shape of the authenticated user object used in the app.
 // The user can be `null` when not authenticated.
-type User = { id: string; email: string; firstName?: string; profilePicture?: string } | null
+type User = {
+  id: string
+  email: string
+  username?: string
+  firstName?: string
+  profilePicture?: string
+  friendCode?: string
+} | null
 
 // Define what the Auth context exposes to consumers.
 // - `user`: current user or `null`

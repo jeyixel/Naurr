@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import cloudinary from "../lib/cloudinary.js";
+import crypto from "crypto";
 
 // creating a function to create JWT token
 const createToken = (id) => {
@@ -13,6 +14,21 @@ const createToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: "3d", // Token valid for 3 days
   });
+};
+
+// Friend code system helpers
+const generateCode = () => crypto.randomBytes(3).toString("hex").toUpperCase();
+
+const generateUniqueFriendCode = async () => {
+  let newCode = "";
+  let existing = null;
+
+  do {
+    newCode = generateCode();
+    existing = await User.findOne({ friendCode: newCode }).lean();
+  } while (existing);
+
+  return newCode;
 };
 
 
@@ -51,17 +67,21 @@ export const signup = async (req, res, next) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // 4. Create user with the new fields
+    // 4. Generate a friend code (best effort, falls back to login assignment if it fails)
+    const friendCode = await generateUniqueFriendCode();
+
+    // 5. Create user with the new fields
     const user = await User.create({ 
       email, 
       password: hashedPassword, 
       firstName, 
       lastName,
       username: normalizedUsername, // enforce trimmed, unique usernames
-      profilePicture: profilePictureUrl // The URL from Cloudinary
+      profilePicture: profilePictureUrl, // The URL from Cloudinary
+      friendCode,
     });
 
-    // 5. Create Token & Cookie (Same as before)
+    // 6. Create Token & Cookie (Same as before)
     const token = createToken(user._id);
     const isProduction = process.env.NODE_ENV === "production";
 
@@ -79,6 +99,7 @@ export const signup = async (req, res, next) => {
         profilePicture: user.profilePicture,
         firstName: user.firstName,
         username: user.username,
+        friendCode: user.friendCode,
       } 
     });
     
@@ -111,6 +132,12 @@ export const login = async (req, res, next) => {
     const auth = await bcrypt.compare(password, user.password);
     if (!auth) return res.status(400).send("Invalid Password");
 
+    // Ensure the user always has a friend code when logging in
+    if (!user.friendCode) {
+      user.friendCode = await generateUniqueFriendCode();
+      await user.save();
+    }
+
     const token = createToken(user._id);
 
     const isProduction = process.env.NODE_ENV === "production";
@@ -123,7 +150,14 @@ export const login = async (req, res, next) => {
     });
 
     return res.status(200).json({ 
-      user: { id: user._id, email: user.email, firstName: user.firstName, username: user.username } 
+      user: { 
+        id: user._id, 
+        email: user.email, 
+        firstName: user.firstName, 
+        username: user.username,
+        friendCode: user.friendCode,
+        profilePicture: user.profilePicture,
+      } 
     });
     
   } catch (err) {
@@ -152,4 +186,27 @@ export const logout = (req, res) => {
   const isProduction = process.env.NODE_ENV === "production";
   res.clearCookie("jwt", { httpOnly: true, secure: isProduction, sameSite: isProduction ? "none" : "lax" });
   return res.sendStatus(200);
+};
+
+export const regenerateFriendCode = async (req, res) => {
+  try {
+    const userId = req.user.id; // From your verifyToken middleware
+    const newCode = await generateUniqueFriendCode();
+
+    // Update the user
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { friendCode: newCode },
+      { new: true }
+    );
+
+    res.status(200).json({ 
+      message: "Friend code updated successfully", 
+      newFriendCode: updatedUser.friendCode 
+    });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).send("Server Error");
+  }
 };

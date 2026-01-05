@@ -30,7 +30,7 @@ export default function SignupPage() {
   }
 
   const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault() // force page reload
     setError(null)
     setLoading(true)
 
@@ -40,7 +40,7 @@ export default function SignupPage() {
     form.append('firstName', firstName)
     form.append('lastName', lastName)
     form.append('username', username)
-    if (file) form.append('profile-image', file)
+    if (file) form.append('profile-image', file) 
 
     try {
       const res = await fetch('http://localhost:5000/api/auth/signup', {
@@ -49,6 +49,7 @@ export default function SignupPage() {
         credentials: 'include',
       })
 
+      // if signup fails, try to parse error message
       if (!res.ok) {
         const parsed = await parseError(res)
         setError(parsed)
