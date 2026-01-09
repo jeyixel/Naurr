@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../components/AuthProvider'
 import '../styles/AuthPages.css'
+import logo from '../assets/naurrlgo2.jpg'
 
 export default function SignupPage() {
   const { setUser } = useAuth()
@@ -70,7 +71,7 @@ export default function SignupPage() {
     <div className="auth-container">
       <div className="auth-box signup-box">
         <div className="auth-header">
-          <h1 className="auth-logo">💬 Naurr</h1>
+          <img src={logo} alt="Naurr Logo" className="auth-logo" />
           <h2 className="auth-title">Create an account</h2>
         </div>
 

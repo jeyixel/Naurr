@@ -220,3 +220,103 @@ export const regenerateFriendCode = async (req, res) => {
     res.status(500).send("Server Error");
   }
 };
+
+const extractCloudinaryPublicId = (url) => {
+  if (!url || typeof url !== "string") return null;
+
+  // Example:
+  // https://res.cloudinary.com/<cloud>/image/upload/v123/chat-app-uploads/abc.jpg
+  // public_id should be: chat-app-uploads/abc
+  const uploadMarker = "/upload/";
+  const idx = url.indexOf(uploadMarker); // what is indexOf? it returns the position of the first occurrence of a specified value in a string
+  if (idx === -1) return null;
+
+  // Get the part after /upload/
+  let rest = url.slice(idx + uploadMarker.length);
+
+  // Remove querystring/fragment
+  rest = rest.split("?")[0].split("#")[0];
+
+  // Cloudinary URLs can include transformation segments before a version segment.
+  // Examples after /upload/:
+  // - v123/chat-app-uploads/abc.jpg
+  // - c_fill,w_200/v123/chat-app-uploads/abc.jpg
+  // We locate the last v<digits> segment (if present) and use everything after it.
+  const segments = rest.split("/").filter(Boolean);
+  const versionIndexes = segments
+    .map((seg, i) => ({ seg, i }))
+    .filter(({ seg }) => /^v\d+$/.test(seg))
+    .map(({ i }) => i);
+
+  const versionIdx = versionIndexes.length ? versionIndexes[versionIndexes.length - 1] : -1;
+  const publicIdSegments = versionIdx >= 0 ? segments.slice(versionIdx + 1) : segments;
+
+  if (!publicIdSegments.length) return null;
+
+  // Remove file extension from the last segment
+  publicIdSegments[publicIdSegments.length - 1] = publicIdSegments[publicIdSegments.length - 1].replace(
+    /\.[^/.]+$/,
+    ""
+  );
+
+  const publicId = publicIdSegments.join("/");
+  return publicId || null;
+};
+
+// Delete account function (not exposed in routes yet plus cloudinary cleanup)
+export const deleteAccount = async (req, res) => {
+  try {
+    const token = req.cookies?.jwt; // read JWT from cookie
+    if (!token) return res.status(401).send("Not authenticated");
+    if (!process.env.JWT_SECRET) return res.status(500).send("Server misconfigured");
+
+    let decoded; // JWT payload
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+      return res.status(401).send("Not authenticated");
+    }
+
+    const userId = decoded?.id; // extract user ID from JWT payload
+    if (!userId) return res.status(401).send("Not authenticated");
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).send("User not found");
+
+    // Best-effort Cloudinary cleanup (do not block account deletion)
+    const profileUrl = user.profilePicture;
+    const publicId = extractCloudinaryPublicId(profileUrl);
+    if (publicId) {
+      try {
+        await cloudinary.uploader.destroy(publicId, {
+          invalidate: true,
+          resource_type: "image",
+        });
+      } catch (e) {
+        console.log("Cloudinary delete failed:", e?.message || e);
+      }
+    }
+
+    // Remove this user from other users' friends lists
+    await User.updateMany(
+      { friends: user._id },
+      { $pull: { friends: user._id } }
+    );
+
+    // Delete user document
+    await User.deleteOne({ _id: user._id });
+
+    // Clear auth cookie
+    const isProduction = process.env.NODE_ENV === "production";
+    res.clearCookie("jwt", {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+    });
+
+    return res.status(200).json({ message: "Account deleted successfully" });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send("Internal Server Error");
+  }
+};

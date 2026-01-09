@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../components/AuthProvider'
 import { FiX } from 'react-icons/fi'
-import naurlogo from '../assets/naurrlgo2.jpg'
+import naurlogo from '../assets/naurrlogohorizontal.png'
 import '../styles/HomePage.css'
 
 export default function HomePage() {
   const { user, logout, setUser } = useAuth()
   const [loading, setLoading] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [isFriendPopupOpen, setIsFriendPopupOpen] = useState(false)
 
   const [copied, setCopied] = useState(false)
@@ -97,6 +98,34 @@ export default function HomePage() {
     }
   }
 
+  const handleDeleteAccount = async () => {
+    if (deleting) return
+    if (!confirm('This will permanently delete your account. Continue?')) return
+
+    setDeleting(true)
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/delete-account', {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+
+      const data = await res.json().catch(() => null)
+
+      if (res.ok) {
+        setUser(null)
+        alert(data?.message || 'Account deleted successfully')
+        return
+      }
+
+      alert(data?.message || 'Failed to delete account')
+    } catch (err) {
+      console.error(err)
+      alert('Failed to connect to server')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <div className="home-container">
       <nav className="navbar">
@@ -121,6 +150,15 @@ export default function HomePage() {
 
             <button onClick={logout} className="logout-button">
               Logout
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDeleteAccount}
+              className="logout-button"
+              disabled={deleting}
+            >
+              {deleting ? 'Deleting…' : 'Delete account'}
             </button>
           </div>
         </div>

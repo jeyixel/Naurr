@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { signup, login, me, logout, regenerateFriendCode } from "../controllers/authController.js";
+import { signup, login, me, logout, regenerateFriendCode, deleteAccount } from "../controllers/authController.js";
 import multer from "multer";
 
 const authRoutes = Router();
@@ -15,6 +15,8 @@ authRoutes.post("/login", login);
 authRoutes.get("/me", me);
 // Regenerate friend code for the authenticated user
 authRoutes.put("/regenerate-code", regenerateFriendCode);
+// Delete the authenticated user's account
+authRoutes.delete("/delete-account", deleteAccount);
 authRoutes.post("/logout", logout);
 
 export default authRoutes;
