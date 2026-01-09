@@ -1,18 +1,33 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../components/AuthProvider'
+import { FiX } from 'react-icons/fi'
 import naurlogo from '../assets/naurrlgo2.jpg'
 import '../styles/HomePage.css'
 
 export default function HomePage() {
   const { user, logout, setUser } = useAuth()
   const [loading, setLoading] = useState(false)
+  const [isFriendPopupOpen, setIsFriendPopupOpen] = useState(false)
 
   const [copied, setCopied] = useState(false)
   const copyResetRef = useRef<number | null>(null)
 
-  const displayName = user?.firstName || user?.username || user?.email
+  // get the username first, if not available, use firstName, then email
+  const displayName = user?.username || user?.firstName || user?.email
   const isFriendCodeReady = Boolean(user?.friendCode)
 
+  useEffect(() => {
+    if (!isFriendPopupOpen) return
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsFriendPopupOpen(false)
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [isFriendPopupOpen])
+
+  // Reset copied state when friend code changes
   useEffect(() => {
     setCopied(false)
     if (copyResetRef.current) {
@@ -29,12 +44,13 @@ export default function HomePage() {
     }
   }, [])
 
+  // Copy friend code to clipboard
   const handleCopy = async () => {
     if (!user?.friendCode) return
 
     try {
       if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(user.friendCode)
+        await navigator.clipboard.writeText(user.friendCode) // modern async clipboard API, waits till done
       } else {
         // Fallback prompt for older browsers
         window.prompt('Copy your friend code', user.friendCode)
@@ -49,7 +65,7 @@ export default function HomePage() {
     }
   }
 
-  // New regenerate code handler (not yet wired up)
+  // Regenerate friend code
   const handleRegenerateCode = async () => {
     if (!confirm("Are you sure? Your old code will stop working.")) return;
     
@@ -93,6 +109,16 @@ export default function HomePage() {
               )}
               <span className="user-name">{displayName}</span>
             </div>
+            
+            {/* add friend button */}
+            <button
+              type="button"
+              className="add-friend-button"
+              onClick={() => setIsFriendPopupOpen(true)}
+            >
+              Add a friend
+            </button>
+
             <button onClick={logout} className="logout-button">
               Logout
             </button>
@@ -100,50 +126,72 @@ export default function HomePage() {
         </div>
       </nav>
 
+      {isFriendPopupOpen && (
+        <div
+          className="friend-popup-overlay"
+          role="dialog"
+          aria-modal="true"
+          onMouseDown={() => setIsFriendPopupOpen(false)}
+        >
+          <div className="friend-popup" onMouseDown={(e) => e.stopPropagation()}>
+            <div className="friend-code-card">
+              <div className="friend-code-header">
+                <div>
+                  <p className="friend-code-title">Your friend code</p>
+                  <p className="friend-code-subtitle">Share it so friends can add you instantly.</p>
+                </div>
+                <div className="friend-code-actions">
+                  {copied && <span className="friend-code-toast">Copied!</span>}
+                  <button
+                    type="button"
+                    className="friend-popup-close"
+                    aria-label="Close"
+                    onClick={() => setIsFriendPopupOpen(false)}
+                  >
+                    {/* The X in react icon package is actually called FiX */}
+                    <FiX aria-hidden="true" focusable="false" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="friend-code-display">
+                <span className={`friend-code-value ${isFriendCodeReady ? '' : 'pending'}`}>
+                  {user?.friendCode ?? 'Generating...'}
+                </span>
+                <button
+                  type="button"
+                  className="copy-code-button"
+                  onClick={handleCopy}
+                  disabled={!isFriendCodeReady}
+                >
+                  {isFriendCodeReady ? (copied ? 'Copied' : 'Copy code') : 'Please wait'}
+                </button>
+                <button
+                  type="button"
+                  className="regenerate-code-button"
+                  onClick={handleRegenerateCode}
+                  disabled={loading || !isFriendCodeReady}
+                >
+                  {loading ? 'Regenerating…' : 'Regenerate code'}
+                </button>
+              </div>
+
+              <p className="friend-code-hint">
+                {isFriendCodeReady
+                  ? 'Anyone with this code can send you a friend request.'
+                  : 'Codes are generated the first time you sign in.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="home-content">
         <div className="home-grid">
           <div className="welcome-message">
             <h2>Welcome to Naurr! 🎉</h2>
             <p>Your modern Gen Z chat experience starts here...</p>
             <p className="coming-soon">✨ More features coming soon ✨</p>
-          </div>
-
-          <div className="friend-code-card">
-            <div className="friend-code-header">
-              <div>
-                <p className="friend-code-title">Your friend code</p>
-                <p className="friend-code-subtitle">Share it so friends can add you instantly.</p>
-              </div>
-              {copied && <span className="friend-code-toast">Copied!</span>}
-            </div>
-
-            <div className="friend-code-display">
-              <span className={`friend-code-value ${isFriendCodeReady ? '' : 'pending'}`}>
-                {user?.friendCode ?? 'Generating...'}
-              </span>
-              <button
-                type="button"
-                className="copy-code-button"
-                onClick={handleCopy}
-                disabled={!isFriendCodeReady}
-              >
-                {isFriendCodeReady ? (copied ? 'Copied' : 'Copy code') : 'Please wait'}
-              </button>
-              <button
-                type="button"
-                className="regenerate-code-button"
-                onClick={handleRegenerateCode}
-                disabled={loading || !isFriendCodeReady}
-              >
-                {loading ? 'Regenerating…' : 'Regenerate code'}
-              </button>
-            </div>
-
-            <p className="friend-code-hint">
-              {isFriendCodeReady
-                ? 'Anyone with this code can send you a friend request.'
-                : 'Codes are generated the first time you sign in.'}
-            </p>
           </div>
         </div>
       </div>
