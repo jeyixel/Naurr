@@ -5,6 +5,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import mongoose from "mongoose"; // Import mongoose
 import authRoutes from "./routes/authRoutes.js"; // Import routes
+import friendRoutes from "./routes/friendRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -34,6 +35,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api/auth", authRoutes); // Prefix all auth routes with /api/auth
+app.use("/api/friends", friendRoutes); // Prefix all friend routes with /api/friends
 
 mongoose
   .connect(DB_URI)

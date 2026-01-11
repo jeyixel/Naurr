@@ -9,12 +9,19 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [isFriendPopupOpen, setIsFriendPopupOpen] = useState(false)
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [isAddFriendOpen, setIsAddFriendOpen] = useState(false)
+  const [friendCodeInput, setFriendCodeInput] = useState('')
+  const [friendFeedback, setFriendFeedback] = useState<string | null>(null)
+  const [friendSubmitting, setFriendSubmitting] = useState(false)
 
   const [copied, setCopied] = useState(false)
   const copyResetRef = useRef<number | null>(null)
+  const profilePopupRef = useRef<HTMLDivElement | null>(null)
 
   // get the username first, if not available, use firstName, then email
   const displayName = user?.username || user?.firstName || user?.email
+  const fullName = user?.firstName || displayName || '—'
   const isFriendCodeReady = Boolean(user?.friendCode)
 
   useEffect(() => {
@@ -27,6 +34,16 @@ export default function HomePage() {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [isFriendPopupOpen])
+
+  // Close add-friend dialog on Escape
+  useEffect(() => {
+    if (!isAddFriendOpen) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsAddFriendOpen(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [isAddFriendOpen])
 
   // Reset copied state when friend code changes
   useEffect(() => {
@@ -44,6 +61,29 @@ export default function HomePage() {
       }
     }
   }, [])
+
+  // Close profile popover on outside click or Escape
+  useEffect(() => {
+    if (!isProfileOpen) return
+
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (profilePopupRef.current && !profilePopupRef.current.contains(e.target as Node)) {
+        setIsProfileOpen(false)
+      }
+    }
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsProfileOpen(false)
+    }
+
+    document.addEventListener('mousedown', handleOutsideClick)
+    window.addEventListener('keydown', handleEscape)
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick)
+      window.removeEventListener('keydown', handleEscape)
+    }
+  }, [isProfileOpen])
 
   // Copy friend code to clipboard
   const handleCopy = async () => {
@@ -126,40 +166,111 @@ export default function HomePage() {
     }
   }
 
+  const handleEditInfo = () => {
+    alert('still under development')
+  }
+
+  const handleSubmitFriendCode = async () => {
+    if (!friendCodeInput.trim()) {
+      setFriendFeedback('Friend code is required')
+      return
+    }
+
+    setFriendSubmitting(true)
+    setFriendFeedback(null)
+    try {
+      const res = await fetch('http://localhost:5000/api/friends/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ friendCode: friendCodeInput.trim() }),
+      })
+
+      const data = await res.json().catch(() => ({}))
+      const message = data?.message || (res.ok ? 'Friend added successfully!' : 'Something went wrong')
+      setFriendFeedback(message)
+    } catch (err) {
+      console.error(err)
+      setFriendFeedback('Failed to connect to server')
+    } finally {
+      setFriendSubmitting(false)
+    }
+  }
+
   return (
     <div className="home-container">
       <nav className="navbar">
         <div className="nav-content">
           <img src={naurlogo} alt="Naurr Logo" className="nav-logo" />
           <div className="nav-user">
-            <div className="user-info">
-              {user?.profilePicture && (
+            <button
+              type="button"
+              className="user-info"
+              onClick={() => setIsProfileOpen((prev) => !prev)}
+              aria-haspopup="dialog"
+              aria-expanded={isProfileOpen}
+            >
+              {user?.profilePicture ? (
                 <img src={user.profilePicture} alt="avatar" className="user-avatar" />
+              ) : (
+                <span className="user-avatar fallback">{displayName?.[0]?.toUpperCase() ?? '?'}</span>
               )}
               <span className="user-name">{displayName}</span>
-            </div>
-            
+            </button>
+
             {/* add friend button */}
             <button
               type="button"
               className="add-friend-button"
               onClick={() => setIsFriendPopupOpen(true)}
             >
-              Add a friend
-            </button>
-
-            <button onClick={logout} className="logout-button">
-              Logout
+              Get Friend Code
             </button>
 
             <button
               type="button"
-              onClick={handleDeleteAccount}
-              className="logout-button"
-              disabled={deleting}
+              className="add-friend-button secondary"
+              onClick={() => {
+                setIsAddFriendOpen(true)
+                setFriendCodeInput('')
+                setFriendFeedback(null)
+              }}
             >
-              {deleting ? 'Deleting…' : 'Delete account'}
+              Add new friend
             </button>
+
+            {isProfileOpen && (
+              <div className="profile-popover" ref={profilePopupRef} role="dialog" aria-label="Profile">
+                <div className="profile-header">
+                  {user?.profilePicture ? (
+                    <img src={user.profilePicture} alt="avatar" className="profile-avatar" />
+                  ) : (
+                    <span className="profile-avatar fallback">{displayName?.[0]?.toUpperCase() ?? '?'}</span>
+                  )}
+                  <div className="profile-text">
+                    <p className="profile-username">@{user?.username ?? 'Unknown user'}</p>
+                    <p className="profile-name">{fullName}</p>
+                    <p className="profile-email">{user?.email ?? '—'}</p>
+                  </div>
+                </div>
+                <div className="profile-actions">
+                  <button type="button" className="profile-action primary" onClick={handleEditInfo}>
+                    Edit info
+                  </button>
+                  <button type="button" className="profile-action" onClick={logout}>
+                    Logout
+                  </button>
+                  <button
+                    type="button"
+                    className="profile-action danger"
+                    onClick={handleDeleteAccount}
+                    disabled={deleting}
+                  >
+                    {deleting ? 'Deleting…' : 'Delete account'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </nav>
@@ -219,6 +330,52 @@ export default function HomePage() {
                   ? 'Anyone with this code can send you a friend request.'
                   : 'Codes are generated the first time you sign in.'}
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isAddFriendOpen && (
+        <div className="add-friend-overlay" role="dialog" aria-modal="true">
+          <div className="add-friend-modal">
+            <div className="add-friend-header">
+              <h3>Add a friend</h3>
+              <button
+                type="button"
+                className="friend-popup-close"
+                aria-label="Close"
+                onClick={() => setIsAddFriendOpen(false)}
+              >
+                <FiX aria-hidden="true" focusable="false" />
+              </button>
+            </div>
+            <p className="add-friend-subtitle">Enter their friend code to connect.</p>
+            <input
+              type="text"
+              className="add-friend-input"
+              value={friendCodeInput}
+              onChange={(e) => setFriendCodeInput(e.target.value)}
+              placeholder="e.g. ABCD-1234"
+              autoFocus
+            />
+            {friendFeedback && <div className="add-friend-feedback">{friendFeedback}</div>}
+            <div className="add-friend-actions">
+              <button
+                type="button"
+                className="profile-action"
+                onClick={() => setIsAddFriendOpen(false)}
+                disabled={friendSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="profile-action primary"
+                onClick={handleSubmitFriendCode}
+                disabled={friendSubmitting}
+              >
+                {friendSubmitting ? 'Sending…' : 'Confirm'}
+              </button>
             </div>
           </div>
         </div>
