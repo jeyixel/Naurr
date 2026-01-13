@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../components/AuthProvider'
 import { FiX } from 'react-icons/fi'
+import FriendsList from '../components/friendList'
+import type { FriendListFriend } from '../components/friendList'
 import naurlogo from '../assets/naurrlogohorizontal.png'
 import '../styles/HomePage.css'
 
@@ -14,6 +16,7 @@ export default function HomePage() {
   const [friendCodeInput, setFriendCodeInput] = useState('')
   const [friendFeedback, setFriendFeedback] = useState<string | null>(null)
   const [friendSubmitting, setFriendSubmitting] = useState(false)
+  const [activeFriend, setActiveFriend] = useState<FriendListFriend | null>(null)
 
   const [copied, setCopied] = useState(false)
   const copyResetRef = useRef<number | null>(null)
@@ -24,9 +27,10 @@ export default function HomePage() {
   const fullName = user?.firstName || displayName || '—'
   const isFriendCodeReady = Boolean(user?.friendCode)
 
+  // this is for the add friend popup
   useEffect(() => {
     if (!isFriendPopupOpen) return
-
+    // close when user hits esc
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setIsFriendPopupOpen(false)
     }
@@ -168,6 +172,10 @@ export default function HomePage() {
 
   const handleEditInfo = () => {
     alert('still under development')
+  }
+
+  const handleFriendSelect = (friend: FriendListFriend) => {
+    setActiveFriend(friend)
   }
 
   const handleSubmitFriendCode = async () => {
@@ -382,13 +390,22 @@ export default function HomePage() {
       )}
 
       <div className="home-content">
-        <div className="home-grid">
+        <aside className="friends-sidebar">
+          <FriendsList selectedId={activeFriend?.id} onSelect={handleFriendSelect} />
+        </aside>
+        <main className="home-main">
           <div className="welcome-message">
             <h2>Welcome to Naurr! 🎉</h2>
             <p>Your modern Gen Z chat experience starts here...</p>
             <p className="coming-soon">✨ More features coming soon ✨</p>
+            {activeFriend && (
+              <div className="active-friend-notice">
+                <p>Previewing chat for {activeFriend.username}</p>
+                <small>We will surface chat bubbles here soon.</small>
+              </div>
+            )}
           </div>
-        </div>
+        </main>
       </div>
     </div>
   )

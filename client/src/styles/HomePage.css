@@ -223,25 +223,55 @@
 }
 
 .home-content {
-  max-width: 1200px;
+  max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
   padding: 48px 24px;
   display: flex;
-  align-items: center;
+  gap: 32px;
+  align-items: stretch;
   justify-content: center;
   min-height: calc(100vh - 200px);
 }
 
-.home-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 32px;
-  width: 100%;
+.friends-sidebar {
+  width: min(360px, 100%);
+  flex-shrink: 0;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.home-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .welcome-message {
   text-align: center;
   animation: slideUp 0.8s ease-out;
+}
+
+.active-friend-notice {
+  margin-top: 24px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(88, 101, 242, 0.5);
+  background: rgba(88, 101, 242, 0.12);
+  color: #dee5ff;
+}
+
+.active-friend-notice p {
+  margin: 0 0 4px 0;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.active-friend-notice small {
+  color: rgba(255, 255, 255, 0.65);
 }
 
 .welcome-message h2 {
@@ -501,6 +531,20 @@
 
   .friend-code-value {
     letter-spacing: 0.2em;
+  }
+
+  .home-content {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .friends-sidebar {
+    width: 100%;
+    align-self: stretch;
+  }
+
+  .home-main {
+    width: 100%;
   }
 }
 

@@ -54,3 +54,34 @@ export const addFriend = async (req, res) => {
     return res.status(500).send("Internal Server Error");
   }
 };
+
+export const getFriends = async (req, res) => {
+  try {
+    // this comes from the authMiddleware which attaches the userId to req
+    const userId = req.userId;
+
+    const userWithFriends = await User.findById(userId)
+    // replaces friend IDs with actual friend documents containing selected fields
+      .populate({
+        path: "friends",
+        select: "username firstName lastName profilePicture",
+      });
+
+    if (!userWithFriends) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const friendsList = (userWithFriends.friends ?? []).map((friend) => ({
+      id: friend._id,
+      username: friend.username,
+      firstName: friend.firstName,
+      lastName: friend.lastName,
+      profilePicture: friend.profilePicture,
+    }));
+
+    return res.status(200).json({ friends: friendsList });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send("Internal Server Error");
+  }
+};

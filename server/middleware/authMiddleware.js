@@ -1,5 +1,7 @@
 import jwt from "jsonwebtoken";
 
+// basically this function will verify the jwt token sent in the cookies
+// and if valid, it will attach the user ID to the request object for further use
 export const verifyToken = (req, res, next) => {
   const token = req.cookies?.jwt;
   if (!token) return res.status(401).json({ message: "You are not authenticated!" });
