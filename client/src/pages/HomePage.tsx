@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../components/AuthProvider'
 import { FiX } from 'react-icons/fi'
-import FriendsList from '../components/friendList'
-import type { FriendListFriend } from '../components/friendList'
+import FriendsList from '../components/FriendList'
+import type { FriendListFriend } from '../components/FriendList'
 import naurlogo from '../assets/naurrlogohorizontal.png'
 import '../styles/HomePage.css'
 
@@ -22,7 +22,7 @@ export default function HomePage() {
   const copyResetRef = useRef<number | null>(null)
   const profilePopupRef = useRef<HTMLDivElement | null>(null)
 
-  // get the username first, if not available, use firstName, then email
+  // get the username first, if not available, use firstName, then email. Thats what ?. means
   const displayName = user?.username || user?.firstName || user?.email
   const fullName = user?.firstName || displayName || '—'
   const isFriendCodeReady = Boolean(user?.friendCode)
@@ -171,7 +171,7 @@ export default function HomePage() {
   }
 
   const handleEditInfo = () => {
-    alert('still under development')
+    alert('Coming soon!')
   }
 
   const handleFriendSelect = (friend: FriendListFriend) => {
