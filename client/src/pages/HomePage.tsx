@@ -207,6 +207,7 @@ export default function HomePage() {
 
   return (
     <div className="home-container">
+      {/* Navigation bar */}
       <nav className="navbar">
         <div className="nav-content">
           <img src={naurlogo} alt="Naurr Logo" className="nav-logo" />
