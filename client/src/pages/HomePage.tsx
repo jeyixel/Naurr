@@ -394,17 +394,12 @@ export default function HomePage() {
           <FriendsList selectedId={activeFriend?.id} onSelect={handleFriendSelect} />
         </aside>
         <main className="home-main">
-          <div className="welcome-message">
-            <h2>Welcome to Naurr! 🎉</h2>
-            <p>Your modern Gen Z chat experience starts here...</p>
-            <p className="coming-soon">✨ More features coming soon ✨</p>
-            {activeFriend && (
-              <div className="active-friend-notice">
-                <p>Previewing chat for {activeFriend.username}</p>
-                <small>We will surface chat bubbles here soon.</small>
-              </div>
-            )}
-          </div>
+          {activeFriend && (
+            <div className="active-friend-notice">
+              <p>Previewing chat for {activeFriend.username}</p>
+              <small>We will surface chat bubbles here soon.</small>
+            </div>
+          )}
         </main>
       </div>
     </div>
