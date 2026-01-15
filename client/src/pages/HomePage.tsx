@@ -3,6 +3,8 @@ import { useAuth } from '../components/AuthProvider'
 import { FiX } from 'react-icons/fi'
 import FriendsList from '../components/FriendList'
 import type { FriendListFriend } from '../components/FriendList'
+import ChatInterface from '../components/ChatInterface'
+import WelcomeScreen from '../components/WelcomeScreen'
 import naurlogo from '../assets/naurrlogohorizontal.png'
 import '../styles/HomePage.css'
 
@@ -27,6 +29,7 @@ export default function HomePage() {
   const fullName = user?.firstName || displayName || '—'
   const isFriendCodeReady = Boolean(user?.friendCode)
 
+
   // this is for the add friend popup
   useEffect(() => {
     if (!isFriendPopupOpen) return
@@ -34,10 +37,12 @@ export default function HomePage() {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setIsFriendPopupOpen(false)
     }
-
+    // if user presses ANY key down, execute onKeyDown, which checks if its the key esc, if so then close the popup
     window.addEventListener('keydown', onKeyDown)
+    // remove the event listener when done
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [isFriendPopupOpen])
+
 
   // Close add-friend dialog on Escape
   useEffect(() => {
@@ -48,6 +53,7 @@ export default function HomePage() {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [isAddFriendOpen])
+
 
   // Reset copied state when friend code changes
   useEffect(() => {
@@ -377,6 +383,8 @@ export default function HomePage() {
               >
                 Cancel
               </button>
+
+              {/* Submitting friend code */}
               <button
                 type="button"
                 className="profile-action primary"
@@ -395,12 +403,7 @@ export default function HomePage() {
           <FriendsList selectedId={activeFriend?.id} onSelect={handleFriendSelect} />
         </aside>
         <main className="home-main">
-          {activeFriend && (
-            <div className="active-friend-notice">
-              <p>Previewing chat for {activeFriend.username}</p>
-              <small>We will surface chat bubbles here soon.</small>
-            </div>
-          )}
+          {activeFriend ? <ChatInterface friend={activeFriend} /> : <WelcomeScreen />}
         </main>
       </div>
     </div>
