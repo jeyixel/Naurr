@@ -1,14 +1,18 @@
 // server/index.js
 import express from "express";
+import { createServer } from "http";
 import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import mongoose from "mongoose"; // Import mongoose
 import authRoutes from "./routes/authRoutes.js"; // Import routes
 import friendRoutes from "./routes/friendRoutes.js";
+import conversationRoutes from "./routes/conversationRoutes.js";
+import { setupSocketIO } from "./lib/socket.js";
 
 dotenv.config();
 const app = express();
+const httpServer = createServer(app);
 
 const PORT = process.env.PORT || 5000;
 // checking if DB_URI is defined
@@ -36,10 +40,14 @@ app.use(express.json());
 // Routes
 app.use("/api/auth", authRoutes); // Prefix all auth routes with /api/auth
 app.use("/api/friends", friendRoutes); // Prefix all friend routes with /api/friends
+app.use("/api/conversations", conversationRoutes); // Prefix all conversation routes with /api/conversations
 
 mongoose
   .connect(DB_URI)
   .then(() => console.log("DB Connected"))
   .catch((err) => console.log(err.message));
 
-app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+// Setup Socket.IO
+setupSocketIO(httpServer);
+
+httpServer.listen(PORT, () => console.log(`Server running on ${PORT}`));

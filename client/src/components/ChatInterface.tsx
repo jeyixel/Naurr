@@ -1,23 +1,37 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { KeyboardEventHandler } from 'react'
 import { FiSend, FiSmile, FiPaperclip } from 'react-icons/fi'
+import { useSocket } from './SocketProvider'
+import { useAuth } from './AuthProvider'
 import type { FriendListFriend } from './FriendList'
 import '../styles/ChatInterface.css'
 
 type ChatMessage = {
-	id: string
-	sender: 'me' | 'friend'
+	_id: string
+	conversationId: string
+	senderId: {
+		_id: string
+		username: string
+		firstName?: string
+		lastName?: string
+		profilePicture?: string
+	}
 	text: string
-	timestamp: string
+	createdAt: string
+	tempId?: string
 }
 
 type ChatInterfaceProps = {
 	friend: FriendListFriend
+	conversationId: string
 }
 
-export default function ChatInterface({ friend }: ChatInterfaceProps) {
+export default function ChatInterface({ friend, conversationId }: ChatInterfaceProps) {
+	const { user } = useAuth()
+	const { socket } = useSocket()
 	const [draft, setDraft] = useState('')
-	const [messages, setMessages] = useState<ChatMessage[]>(() => defaultMessages(friend))
+	const [messages, setMessages] = useState<ChatMessage[]>([])
+	const [loading, setLoading] = useState(true)
 	const viewportRef = useRef<HTMLDivElement | null>(null)
 
 	const friendLabel = useMemo(
@@ -25,10 +39,73 @@ export default function ChatInterface({ friend }: ChatInterfaceProps) {
 		[friend.firstName, friend.username]
 	)
 
+	// Load initial messages when conversation changes
 	useEffect(() => {
-		setMessages(defaultMessages(friend))
-	}, [friend])
+		const loadMessages = async () => {
+			setLoading(true)
+			try {
+				const res = await fetch(
+					`http://localhost:5000/api/conversations/${conversationId}/messages?limit=50`,
+					{
+						credentials: 'include',
+					}
+				)
 
+				if (res.ok) {
+					const data = await res.json()
+					setMessages(data.messages)
+				}
+			} catch (error) {
+				console.error('Error loading messages:', error)
+			} finally {
+				setLoading(false)
+			}
+		}
+
+		loadMessages()
+	}, [conversationId])
+
+	// Join conversation room and listen for new messages
+	useEffect(() => {
+		if (!socket || !conversationId) return
+
+		socket.emit('conversation:join', conversationId)
+
+		const handleNewMessage = (data: { message: ChatMessage; tempId?: string }) => {
+			setMessages((prev) => {
+				// Remove temp message if it exists and replace with real one
+				if (data.tempId) {
+					const filtered = prev.filter((m) => m.tempId !== data.tempId)
+					return [...filtered, data.message]
+				}
+				// Add new message if not already present
+				if (!prev.find((m) => m._id === data.message._id)) {
+					return [...prev, data.message]
+				}
+				return prev
+			})
+		}
+
+		const handleMessageError = (data: { tempId?: string; error: string }) => {
+			console.error('Message error:', data.error)
+			// Remove failed temp message
+			if (data.tempId) {
+				setMessages((prev) => prev.filter((m) => m.tempId !== data.tempId))
+			}
+			alert(data.error)
+		}
+
+		socket.on('message:new', handleNewMessage)
+		socket.on('message:error', handleMessageError)
+
+		return () => {
+			socket.emit('conversation:leave', conversationId)
+			socket.off('message:new', handleNewMessage)
+			socket.off('message:error', handleMessageError)
+		}
+	}, [socket, conversationId])
+
+	// Auto-scroll to bottom when messages change
 	useEffect(() => {
 		const viewport = viewportRef.current
 		if (!viewport) return
@@ -37,17 +114,35 @@ export default function ChatInterface({ friend }: ChatInterfaceProps) {
 
 	const handleSend = () => {
 		const text = draft.trim()
-		if (!text) return
+		if (!text || !socket || !user) return
 
-		const outgoing: ChatMessage = {
-			id: `me-${Date.now()}`,
-			sender: 'me',
+		const tempId = `temp-${Date.now()}`
+
+		// Optimistic UI: Add temporary message
+		const tempMessage: ChatMessage = {
+			_id: tempId,
+			conversationId,
+			senderId: {
+				_id: user._id,
+				username: user.username,
+				firstName: user.firstName,
+				lastName: user.lastName,
+				profilePicture: user.profilePicture,
+			},
 			text,
-			timestamp: 'Now',
+			createdAt: new Date().toISOString(),
+			tempId,
 		}
 
-		setMessages((prev) => [...prev, outgoing])
+		setMessages((prev) => [...prev, tempMessage])
 		setDraft('')
+
+		// Send via socket
+		socket.emit('message:send', {
+			conversationId,
+			text,
+			tempId,
+		})
 	}
 
 	const handleKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
@@ -81,15 +176,31 @@ export default function ChatInterface({ friend }: ChatInterfaceProps) {
 			</header>
 
 			<div className="chat-body" ref={viewportRef}>
-				{messages.map((message) => (
-					<article
-						key={message.id}
-						className={`chat-bubble ${message.sender === 'me' ? 'is-me' : 'is-friend'}`}
-					>
-						<p>{message.text}</p>
-						<span className="chat-timestamp">{message.timestamp}</span>
-					</article>
-				))}
+				{loading ? (
+					<p style={{ textAlign: 'center', color: '#999' }}>Loading messages...</p>
+				) : messages.length === 0 ? (
+					<p style={{ textAlign: 'center', color: '#999' }}>
+						No messages yet. Start the conversation!
+					</p>
+				) : (
+					messages.map((message) => {
+						const isMe = message.senderId._id === user?._id
+						const timestamp = new Date(message.createdAt).toLocaleTimeString('en-US', {
+							hour: 'numeric',
+							minute: '2-digit',
+						})
+
+						return (
+							<article
+								key={message._id}
+								className={`chat-bubble ${isMe ? 'is-me' : 'is-friend'}`}
+							>
+								<p>{message.text}</p>
+								<span className="chat-timestamp">{timestamp}</span>
+							</article>
+						)
+					})
+				)}
 			</div>
 
 			<footer className="chat-input-row">
@@ -111,22 +222,4 @@ export default function ChatInterface({ friend }: ChatInterfaceProps) {
 			</footer>
 		</section>
 	)
-}
-
-function defaultMessages(friend: FriendListFriend): ChatMessage[] {
-	const who = friend.firstName || friend.username || 'Your friend'
-	return [
-		{
-			id: 'seed-1',
-			sender: 'friend',
-			text: `Hey, it's ${who}! This space will show our messages soon.`,
-			timestamp: '2:45 PM',
-		},
-		{
-			id: 'seed-2',
-			sender: 'me',
-			text: 'Nice, looks good already. I will send you a message when it is wired to the backend.',
-			timestamp: '2:46 PM',
-		},
-	]
 }
