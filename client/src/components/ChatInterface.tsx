@@ -69,9 +69,11 @@ export default function ChatInterface({ friend, conversationId }: ChatInterfaceP
 	useEffect(() => {
 		if (!socket || !conversationId) return
 
+		console.log(`🔌 Joining conversation: ${conversationId}`)
 		socket.emit('conversation:join', conversationId)
 
 		const handleNewMessage = (data: { message: ChatMessage; tempId?: string }) => {
+			console.log(`📨 Received message:new`, data)
 			setMessages((prev) => {
 				// Remove temp message if it exists and replace with real one
 				if (data.tempId) {
@@ -87,7 +89,7 @@ export default function ChatInterface({ friend, conversationId }: ChatInterfaceP
 		}
 
 		const handleMessageError = (data: { tempId?: string; error: string }) => {
-			console.error('Message error:', data.error)
+			console.error('❌ Message error:', data.error)
 			// Remove failed temp message
 			if (data.tempId) {
 				setMessages((prev) => prev.filter((m) => m.tempId !== data.tempId))
@@ -99,6 +101,7 @@ export default function ChatInterface({ friend, conversationId }: ChatInterfaceP
 		socket.on('message:error', handleMessageError)
 
 		return () => {
+			console.log(`🔌 Leaving conversation: ${conversationId}`)
 			socket.emit('conversation:leave', conversationId)
 			socket.off('message:new', handleNewMessage)
 			socket.off('message:error', handleMessageError)
@@ -117,6 +120,8 @@ export default function ChatInterface({ friend, conversationId }: ChatInterfaceP
 		if (!text || !socket || !user) return
 
 		const tempId = `temp-${Date.now()}`
+
+		console.log(`📤 Sending message to conversation ${conversationId}`, { text, tempId })
 
 		// Optimistic UI: Add temporary message
 		const tempMessage: ChatMessage = {

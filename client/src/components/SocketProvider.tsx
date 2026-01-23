@@ -11,10 +11,8 @@ const SocketContext = createContext<SocketContextType>({
   isConnected: false,
 })
 
-// Convenience hook for consuming the Socket context
 export const useSocket = () => useContext(SocketContext)
 
-// Props for the SocketProvider component
 type SocketProviderProps = {
   children: React.ReactNode
 }
@@ -31,23 +29,28 @@ export function SocketProvider({ children }: SocketProviderProps) {
     })
 
     newSocket.on('connect', () => {
-      console.log('Socket connected')
+      console.log('✅ Socket connected:', newSocket.id)
       setIsConnected(true)
     })
 
     newSocket.on('disconnect', () => {
-      console.log('Socket disconnected')
+      console.log('❌ Socket disconnected')
       setIsConnected(false)
     })
 
     newSocket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error)
+      console.error('❌ Socket connection error:', error.message)
       setIsConnected(false)
+    })
+
+    newSocket.on('error', (error) => {
+      console.error('❌ Socket error:', error)
     })
 
     setSocket(newSocket)
 
     return () => {
+      console.log('🔌 Closing socket connection')
       newSocket.close()
     }
   }, [])

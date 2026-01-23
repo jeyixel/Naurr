@@ -73,8 +73,10 @@ export function setupSocketIO(httpServer) {
     socket.on("message:send", async (data) => {
       try {
         const { conversationId, text, tempId } = data;
+        console.log(`📩 Received message:send from user ${socket.userId}`, { conversationId, text, tempId });
 
         if (!text || !text.trim()) {
+          console.log(`❌ Empty text received`);
           socket.emit("message:error", { tempId, error: "Message text is required" });
           return;
         }
@@ -86,9 +88,12 @@ export function setupSocketIO(httpServer) {
         });
 
         if (!conversation) {
+          console.log(`❌ Conversation not found: ${conversationId}`);
           socket.emit("message:error", { tempId, error: "Conversation not found" });
           return;
         }
+
+        console.log(`✅ Conversation found, creating message...`);
 
         // Create message
         const message = await Message.create({
@@ -96,6 +101,8 @@ export function setupSocketIO(httpServer) {
           senderId: socket.userId,
           text: text.trim(),
         });
+
+        console.log(`✅ Message created in DB:`, message._id);
 
         // Update conversation last message
         await Conversation.findByIdAndUpdate(conversationId, {
@@ -109,15 +116,17 @@ export function setupSocketIO(httpServer) {
           "username firstName lastName profilePicture"
         );
 
+        console.log(`✅ Populated message:`, populatedMessage);
+
         // Emit to all participants in the conversation room
         io.to(`conversation:${conversationId}`).emit("message:new", {
           message: populatedMessage,
           tempId,
         });
 
-        console.log(`Message sent in conversation ${conversationId}`);
+        console.log(`✅ Message emitted to conversation:${conversationId}`);
       } catch (error) {
-        console.error("Error sending message:", error);
+        console.error("❌ Error sending message:", error);
         socket.emit("message:error", {
           tempId: data.tempId,
           error: "Failed to send message",
