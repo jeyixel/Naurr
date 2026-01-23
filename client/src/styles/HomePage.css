@@ -226,7 +226,7 @@
   width: 100%;
   margin: 0 auto;
   display: flex;
-  gap: 32px;
+  /* gap: 32px; */
   align-items: stretch;
   justify-content: center;
   min-height: 696px;

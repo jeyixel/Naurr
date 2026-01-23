@@ -2,14 +2,16 @@
 .welcome-screen {
   display: grid;
   place-items: center;
-  padding: 48px 0px;
-  height: 100%;
+  padding: 48px 20px;
 }
 
 .ws-card {
   width: 100%;
   height: 100%;
-  background: linear-gradient(180deg, rgba(34,34,56,0.9), rgba(24,24,36,0.9));
+  /* make slightly translucent so backdrop-filter can blur the background */
+  background: linear-gradient(180deg, rgba(34,34,56,0.6), rgba(24,24,36,0.6));
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   border: 1px solid rgba(255,255,255,0.04);
   border-radius: 14px;
   padding: 28px;
@@ -20,6 +22,13 @@
 .ws-header {
   text-align: left;
   margin-bottom: 18px;
+}
+
+.welcome-screen-container {
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .ws-title {
