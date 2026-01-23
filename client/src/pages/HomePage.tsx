@@ -398,6 +398,7 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* Home page content */}
       <div className="home-content">
         <aside className="friends-sidebar">
           <FriendsList selectedId={activeFriend?.id} onSelect={handleFriendSelect} />
