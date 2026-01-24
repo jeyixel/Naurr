@@ -12,16 +12,18 @@ export type FriendListFriend = {
 
 type FriendsListProps = {
   onSelect?: (friend: FriendListFriend) => void
-  selectedId?: string
+  selectedId?: string // Currently selected friend's ID, this is a prop passed from parent
 }
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
 
 export default function FriendsList({ onSelect, selectedId }: FriendsListProps) {
+  // an array of FriendListFriend objects, intially empty
   const [friends, setFriends] = useState<FriendListFriend[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // useMemo so that the array is only created once even on re-renders
   const skeletonCount = useMemo(() => Array.from({ length: 3 }), [])
 
   useEffect(() => {

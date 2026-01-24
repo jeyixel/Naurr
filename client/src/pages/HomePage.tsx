@@ -419,6 +419,7 @@ export default function HomePage() {
       {/* Home page content */}
       <div className="home-content">
         <aside className="friends-sidebar">
+          {/* selectedId and onSelect gets passed on as props */}
           <FriendsList selectedId={activeFriend?.id} onSelect={handleFriendSelect} />
         </aside>
         <main className="home-main">

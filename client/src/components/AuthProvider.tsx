@@ -16,6 +16,7 @@ type User = {
   email: string
   username?: string
   firstName?: string
+  lastName?: string
   profilePicture?: string
   friendCode?: string
 } | null

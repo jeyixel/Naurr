@@ -101,7 +101,7 @@ export default function ChatInterface({ friend, conversationId }: ChatInterfaceP
 		socket.on('message:error', handleMessageError)
 
 		return () => {
-			console.log(`🔌 Leaving conversation: ${conversationId}`)
+			// console.log(`🔌 Leaving conversation: ${conversationId}`)
 			socket.emit('conversation:leave', conversationId)
 			socket.off('message:new', handleNewMessage)
 			socket.off('message:error', handleMessageError)
@@ -129,7 +129,7 @@ export default function ChatInterface({ friend, conversationId }: ChatInterfaceP
 			conversationId,
 			senderId: {
 				_id: user._id,
-				username: user.username,
+				username: user.username ?? user.email ?? 'Unknown',
 				firstName: user.firstName,
 				lastName: user.lastName,
 				profilePicture: user.profilePicture,
