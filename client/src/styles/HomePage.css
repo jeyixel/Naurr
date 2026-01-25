@@ -1,8 +1,11 @@
 /* Home Page Styles */
 .home-container {
   min-height: 100vh;
+  height: 100vh;
   background: #1a1a2e;
   animation: fadeIn 0.5s ease-in;
+  display: flex;
+  flex-direction: column;
 }
 
 .navbar {
@@ -229,7 +232,9 @@
   /* gap: 32px; */
   align-items: stretch;
   justify-content: center;
-  min-height: 696px;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
 }
 
 .friends-sidebar {
@@ -238,13 +243,21 @@
   align-self: stretch;
   display: flex;
   justify-content: flex-start;
+  min-height: 0;
 }
 
 .home-main {
   flex: 1;
-  /* display: flex; */
+  display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.home-main > * {
+  width: 100%;
+  height: 100%;
 }
 
 .active-friend-notice {

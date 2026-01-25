@@ -19,6 +19,7 @@ export default function HomePage() {
   const [friendFeedback, setFriendFeedback] = useState<string | null>(null)
   const [friendSubmitting, setFriendSubmitting] = useState(false)
   const [activeFriend, setActiveFriend] = useState<FriendListFriend | null>(null)
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null)
 
   const [copied, setCopied] = useState(false)
   const copyResetRef = useRef<number | null>(null)
@@ -180,8 +181,25 @@ export default function HomePage() {
     alert('Coming soon!')
   }
 
-  const handleFriendSelect = (friend: FriendListFriend) => {
+  const handleFriendSelect = async (friend: FriendListFriend) => {
     setActiveFriend(friend)
+    
+    // Get or create conversation with this friend
+    try {
+      const res = await fetch(`http://localhost:5000/api/conversations/direct/${friend.id}`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setActiveConversationId(data.conversation._id)
+      } else {
+        console.error('Failed to get conversation')
+      }
+    } catch (err) {
+      console.error('Error getting conversation:', err)
+    }
   }
 
   const handleSubmitFriendCode = async () => {
@@ -401,10 +419,15 @@ export default function HomePage() {
       {/* Home page content */}
       <div className="home-content">
         <aside className="friends-sidebar">
+          {/* selectedId and onSelect gets passed on as props */}
           <FriendsList selectedId={activeFriend?.id} onSelect={handleFriendSelect} />
         </aside>
         <main className="home-main">
-          {activeFriend ? <ChatInterface friend={activeFriend} /> : <WelcomeScreen />}
+          {activeFriend && activeConversationId ? (
+            <ChatInterface friend={activeFriend} conversationId={activeConversationId} />
+          ) : (
+            <WelcomeScreen />
+          )}
         </main>
       </div>
     </div>

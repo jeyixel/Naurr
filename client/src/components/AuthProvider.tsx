@@ -12,10 +12,11 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 // Define the shape of the authenticated user object used in the app.
 // The user can be `null` when not authenticated.
 type User = {
-  id: string
+  _id: string
   email: string
   username?: string
   firstName?: string
+  lastName?: string
   profilePicture?: string
   friendCode?: string
 } | null
