@@ -11,6 +11,7 @@ const createToken = (id) => {
     if (!process.env.JWT_SECRET) {
         throw new Error("JWT_SECRET is not defined in environment variables");
     }
+    // create and return the signed JWT token
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: "3d", // Token valid for 3 days
   });

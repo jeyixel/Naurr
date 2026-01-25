@@ -7,14 +7,15 @@ import Message from "../models/Message.js";
 export function setupSocketIO(httpServer) {
   const io = new Server(httpServer, {
     cors: {
-      origin: "http://localhost:5173",
-      credentials: true,
+      origin: "http://localhost:5173", // allow frontend connections
+      credentials: true, // enable cookie based auth
     },
   });
 
   // Authentication middleware for Socket.IO
   io.use((socket, next) => {
     try {
+      // Extract token from cookies
       const cookies = cookie.parse(socket.handshake.headers.cookie || "");
       const token = cookies.jwt;
 
@@ -22,6 +23,7 @@ export function setupSocketIO(httpServer) {
         return next(new Error("Authentication error: No token provided"));
       }
 
+      // where did payload.id come from? It comes from when the JWT was created during user login or registration. Typically, when a user logs in, the server generates a JWT that includes the user's ID (and possibly other information) in its payload. This ID is then used to identify the user in subsequent requests, including WebSocket connections.
       jwt.verify(token, process.env.JWT_SECRET, (err, payload) => {
         if (err) {
           return next(new Error("Authentication error: Invalid token"));
