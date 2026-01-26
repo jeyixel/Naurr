@@ -1,19 +1,25 @@
-# Naurr — Modern Gen Z Chat (Prototype)
+# Naurr — Modern Gen Z Chat
 
-Naurr is a small personal project: a Discord-like modern chat app prototype built for fun. It uses a Node/Express backend with MongoDB for users, Cloudinary for profile image uploads, and cookies for session JWTs. The plan is to integrate WebSockets and Redis later for real-time messaging and scaling.
+Naurr is a modern, Discord-inspired chat app with a playful Gen Z UI. The current build is demo-ready: complete authentication, profile uploads, and friend management are in place. Real-time chat is the next (and only major) milestone.
 
-> This repository is a work-in-progress prototype — intended for learning and experimentation.
+## Status
+- Feature-complete for auth and friends; ready for demos and local use.
+- WebSockets + Redis for real-time messaging are planned next.
 
-## Features (current)
-- Email/password signup + optional profile image upload (Cloudinary)
-- JWT stored in an HTTP-only cookie
-- Login / Signup UI (React + Vite) with dark, Gen Z-friendly styling
-- Protected `/me` endpoint to return current user
+## Features
+- Email/password signup with unique username and shareable friend code.
+- Optional profile image upload via Cloudinary during signup.
+- Secure auth with bcrypt + JWT stored in an HTTP-only cookie; `me`, logout, and account deletion included.
+- Friend management: add by friend code (mutual), view friends list, regenerate your code.
+- React + Vite frontend with dark, Gen Z-friendly styling and protected routes.
+- Environment-aware cookies (HTTP in dev, HTTPS in production) and CORS preconfigured for the dev client.
 
-## Planned
-- WebSockets for real-time chat
-- Redis for pub/sub + session/scale support
-- More chat UI and channels
+## Tech stack
+- Frontend: React + Vite + TypeScript
+- Backend: Node.js + Express
+- Database: MongoDB (Mongoose)
+- Media: Cloudinary for avatar uploads
+- Auth: JWT in HTTP-only cookies + bcrypt password hashing
 
 ---
 
@@ -23,7 +29,6 @@ Naurr is a small personal project: a Discord-like modern chat app prototype buil
 - (Optional) Redis server if you plan to add real-time pub/sub
 - Cloudinary account for image uploads
 
----
 
 ## Repository layout
 - `server/` — Express backend
@@ -75,6 +80,25 @@ The server defaults to `http://localhost:5000` and the client dev server runs at
 
 ---
 
+## API quick reference
+- POST `/api/auth/signup` — multipart/form-data; fields: `email`, `password`, `firstName`, `lastName`, `username`, optional file `profile-image`.
+- POST `/api/auth/login` — JSON; fields: `email`, `username`, `password`; sets auth cookie.
+- GET `/api/auth/me` — returns current user (requires auth cookie).
+- POST `/api/auth/logout` — clears auth cookie.
+- PUT `/api/auth/regenerate-code` — issues a new friend code for the authenticated user.
+- DELETE `/api/auth/delete-account` — deletes the authenticated user (best-effort Cloudinary cleanup).
+- GET `/api/friends` — returns the authenticated user’s friends.
+- POST `/api/friends/add` — JSON; field: `friendCode`; creates mutual friendship.
+
+## CORS / Cookies
+- Server CORS is set to `http://localhost:5173` with `credentials: true`. Update in `server/index.js` if your client origin changes.
+- Cookies use `httpOnly`. In development (`NODE_ENV !== 'production'`) they are sent with `sameSite: 'lax'` and `secure: false` so they work over HTTP. In production, `secure` and `sameSite: 'none'` are used—run behind HTTPS.
+
+## Roadmap
+- WebSockets for real-time chat
+- Redis for pub/sub and horizontal scaling
+- Channels, typing indicators, and richer chat UI
+
 ## Testing the API (Postman / curl)
 - Signup (multipart/form-data)
   - POST `http://localhost:5000/api/auth/signup`
@@ -113,22 +137,15 @@ Notes for Postman: make sure Postman saves/sends cookies (Cookies dialog) or inc
 
 ---
 
-## Redis & WebSockets (future)
-- Redis will be used for pub/sub and scaling across multiple server instances.
-- For local testing, install Redis and run it locally, or use a managed Redis provider.
-- WebSocket server (socket.io or ws) will be added to the backend and integrated with Redis for scaling.
-
----
-
 ## Troubleshooting
-- Duplicate key error when signing up: means the email (or unique field) is already in the DB. Remove the duplicate or use a different email.
+- Duplicate key error when signing up: email or username is already in the DB. Use a different value or remove the duplicate.
 - `JWT_SECRET` missing: server will throw when creating tokens. Ensure `.env` has it.
-- Cloudinary errors: confirm the keys and that the upload request contains the file field `profile-image`.
+- Cloudinary errors: confirm keys and that the upload request contains the `profile-image` file field.
 
 ---
 
 ## License & Notes
-This is a personal project built for fun and learning. No production guarantees—be mindful of security and hardening before using in production.
+This is a personal project built for fun and learning. No production guarantees—harden and review before production use.
 
 If you want, I can also:
 - Add a demo script to seed the DB with test users
